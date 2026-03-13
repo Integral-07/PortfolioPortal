@@ -1,0 +1,13 @@
+{
+  "name": "portfolio-portal",
+  "private": true,
+  "scripts": {
+    "dev:ui": "pnpm --filter ui dev",
+    "dev:api": "pnpm --filter api dev",
+    "build:ui": "pnpm --filter ui build",
+    "build:api": "pnpm --filter api build"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

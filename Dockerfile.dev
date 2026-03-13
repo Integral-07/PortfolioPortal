@@ -1,0 +1,11 @@
+# node:20-alpine（musl libc）ではなく node:20-slim（glibc / Debian ベース）を使用する。
+# @cloudflare/workerd バイナリは glibc でコンパイルされており、
+# Alpine 上では ELF インタープリタが見つからず ENOENT で起動に失敗するため。
+FROM node:20-slim
+RUN npm install -g pnpm
+WORKDIR /app
+COPY package.json pnpm-workspace.yaml tsconfig.base.json ./
+COPY packages/types/package.json ./packages/types/
+COPY ui/package.json ./ui/
+COPY api/package.json ./api/
+RUN pnpm install
