@@ -11,7 +11,7 @@ services:
       - ./ui/vite.config.ts:/app/ui/vite.config.ts
       - ./packages/types/src:/app/packages/types/src
     environment:
-      - VITE_API_TARGET=http://api:8787
+      - VITE_API_TARGET=http://host.docker.internal:8787
       - VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
     command: pnpm --filter ui dev:docker
 

@@ -27,7 +27,7 @@ export async function insertProfile(
 export async function updateProfileByUserId(
   db: DrizzleDb,
   userId: string,
-  data: { name?: string; qualifications?: string | null; career?: string | null },
+  data: { name?: string; qualifications?: string | null; career?: string | null; shareSlug?: string | null },
 ) {
   const result = await db
     .update(profiles)
