@@ -4,6 +4,7 @@ export const profiles = pgTable('profiles', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: text('user_id').notNull().unique(),
   name: text('name').notNull(),
+  shareSlug: text('share_slug').unique(),
   qualifications: text('qualifications'),
   career: text('career'),
   createdAt: timestamp('created_at').notNull().defaultNow(),

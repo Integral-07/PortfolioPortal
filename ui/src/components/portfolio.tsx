@@ -7,6 +7,7 @@ type Profile = {
   name: string
   qualifications: string | null
   career: string | null
+  shareSlug: string | null
   createdAt: string
   updatedAt: string
 }
@@ -19,7 +20,10 @@ type ModalState =
 export default function Portfolio() {
   const { isSignedIn, getToken } = useAuth()
   const [profiles, setProfiles] = useState<Profile[]>([])
+  const [myProfile, setMyProfile] = useState<Profile | null>(null)
+  const [shareSlug, setShareSlug] = useState('')
   const [modal, setModal] = useState<ModalState>({ type: 'closed' })
+
   const authHeaders = async () => {
     const token = await getToken()
     return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
@@ -29,6 +33,36 @@ export default function Portfolio() {
     const res = await fetch('/api/profiles')
     const data = await res.json()
     if (res.ok) setProfiles(data.profiles)
+  }
+
+  const fetchMyProfile = async () => {
+    const headers = await authHeaders()
+    const res = await fetch('/api/profiles/me', { headers })
+    const data = await res.json()
+    if (res.ok) {
+      setMyProfile(data)
+      setShareSlug(data.shareSlug ?? '')
+    }
+  }
+
+  const handleSlugBlur = async () => {
+    if (!myProfile) return
+    const headers = await authHeaders()
+    await fetch('/api/profiles/me', {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ shareSlug: shareSlug || null }),
+    })
+  }
+
+  const handleCopyShareLink = async () => {
+    const headers = await authHeaders()
+    const res = await fetch('/api/share-links', { method: 'POST', headers })
+    const data = await res.json()
+    const slug = shareSlug || 'profile'
+    const url = `${window.location.origin}/${slug}/?share=${data.token}`
+    await navigator.clipboard.writeText(url)
+    alert('共有リンクをコピーしました')
   }
 
   const handleDelete = async () => {
@@ -41,9 +75,25 @@ export default function Portfolio() {
     fetchProfiles()
   }, [])
 
+  useEffect(() => {
+    if (isSignedIn) fetchMyProfile()
+  }, [isSignedIn])
+
   return (
     <>
       {isSignedIn && <button onClick={() => setModal({ type: 'create' })}>作成</button>}
+
+      {isSignedIn && (
+        <div>
+          <input
+            value={shareSlug}
+            onChange={(e) => setShareSlug(e.target.value)}
+            onBlur={handleSlugBlur}
+            placeholder="your-name"
+          />
+          <button onClick={handleCopyShareLink}>共有リンクをコピー</button>
+        </div>
+      )}
 
       <ul>
         {profiles.map((profile) => (

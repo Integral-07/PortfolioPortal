@@ -6,6 +6,7 @@ import type { DrizzleDb } from './db/client'
 import { databaseMiddleware } from './middleware/database'
 import { authMiddleware } from './middleware/auth'
 import { getProfiles, getProfileById, getMyProfile, createProfile, updateProfileById, deleteProfileById } from './usecase/profile'
+import { getOrCreateShareLink, resolveShareLink } from './usecase/share_link'
 import type {
   GetProfilesResponse,
   GetProfileResponse,
@@ -44,11 +45,19 @@ export const createApp = () =>
 
     .get('/api/health', (c) => c.json({ status: 'ok' }))
 
-    // ゲスト可: プロフィール一覧・詳細
+    // ゲスト可
     .get('/api/profiles', async (c) => {
       const db = c.get('db')
       const profiles = await getProfiles(db)
       return c.json<GetProfilesResponse>({ profiles })
+    })
+
+    // 認証必須（/:id より前に定義）
+    .get('/api/profiles/me', authMiddleware(), async (c) => {
+      const db = c.get('db')
+      const userId = c.get('userId')
+      const profile = await getMyProfile(db, userId)
+      return c.json<GetProfileResponse>(profile)
     })
 
     .get('/api/profiles/:id', async (c) => {
@@ -58,17 +67,14 @@ export const createApp = () =>
       return c.json<GetProfileResponse>(profile)
     })
 
-    // 以下は認証必須
-    .use('/api/profiles/*', authMiddleware())
-
-    .get('/api/profiles/me', async (c) => {
+    .get('/api/share/:token', async (c) => {
       const db = c.get('db')
-      const userId = c.get('userId')
-      const profile = await getMyProfile(db, userId)
+      const token = c.req.param('token')
+      const profile = await resolveShareLink(db, token)
       return c.json<GetProfileResponse>(profile)
     })
 
-    .post('/api/profiles', async (c) => {
+    .post('/api/profiles', authMiddleware(), async (c) => {
       const db = c.get('db')
       const userId = c.get('userId')
       const body = await c.req.json<PostProfileRequest>()
@@ -76,7 +82,7 @@ export const createApp = () =>
       return c.json<PostProfileResponse>(profile)
     })
 
-    .put('/api/profiles/me', async (c) => {
+    .put('/api/profiles/me', authMiddleware(), async (c) => {
       const db = c.get('db')
       const userId = c.get('userId')
       const body = await c.req.json<PutProfileRequest>()
@@ -84,11 +90,18 @@ export const createApp = () =>
       return c.json<PutProfileResponse>(profile)
     })
 
-    .delete('/api/profiles/me', async (c) => {
+    .delete('/api/profiles/me', authMiddleware(), async (c) => {
       const db = c.get('db')
       const userId = c.get('userId')
       const result = await deleteProfileById(db, userId)
       return c.json<DeleteProfileResponse>(result)
+    })
+
+    .post('/api/share-links', authMiddleware(), async (c) => {
+      const db = c.get('db')
+      const userId = c.get('userId')
+      const shareLink = await getOrCreateShareLink(db, userId)
+      return c.json({ token: shareLink.token })
     })
 
 const app = createApp()
