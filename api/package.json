@@ -10,12 +10,14 @@
     "deploy": "wrangler deploy"
   },
   "dependencies": {
+    "@portfolio-portal/types": "workspace:*",
+    "drizzle-orm": "^0.45.1",
     "hono": "^4.6.0",
-    "@portfolio-portal/types": "workspace:*"
+    "postgres": "^3.4.8"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241022.0",
-    "wrangler": "^3.78.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "wrangler": "^3.78.0"
   }
 }
