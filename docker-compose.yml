@@ -12,6 +12,7 @@ services:
       - ./packages/types/src:/app/packages/types/src
     environment:
       - VITE_API_TARGET=http://api:8787
+      - VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
     command: pnpm --filter ui dev:docker
 
   api:
@@ -23,7 +24,7 @@ services:
     volumes:
       - ./api/src:/app/api/src
       - ./api/wrangler.toml:/app/api/wrangler.toml
-      - ./api/.dev.vars.docker:/app/api/.dev.vars
+      - ./api/.dev.vars:/app/api/.dev.vars
       - ./packages/types/src:/app/packages/types/src
       - ./db/src:/app/db/src
     depends_on:

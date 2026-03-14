@@ -11,28 +11,33 @@ export async function findProfileById(db: DrizzleDb, id: string) {
   return result[0] ?? null
 }
 
+export async function findProfileByUserId(db: DrizzleDb, userId: string) {
+  const result = await db.select().from(profiles).where(eq(profiles.userId, userId))
+  return result[0] ?? null
+}
+
 export async function insertProfile(
   db: DrizzleDb,
-  data: { name: string; qualifications?: string | null; career?: string | null },
+  data: { userId: string; name: string; qualifications?: string | null; career?: string | null },
 ) {
   const result = await db.insert(profiles).values(data).returning()
   return result[0]
 }
 
-export async function updateProfile(
+export async function updateProfileByUserId(
   db: DrizzleDb,
-  id: string,
+  userId: string,
   data: { name?: string; qualifications?: string | null; career?: string | null },
 ) {
   const result = await db
     .update(profiles)
     .set({ ...data, updatedAt: new Date() })
-    .where(eq(profiles.id, id))
+    .where(eq(profiles.userId, userId))
     .returning()
   return result[0] ?? null
 }
 
-export async function deleteProfile(db: DrizzleDb, id: string) {
-  const result = await db.delete(profiles).where(eq(profiles.id, id)).returning()
+export async function deleteProfileByUserId(db: DrizzleDb, userId: string) {
+  const result = await db.delete(profiles).where(eq(profiles.userId, userId)).returning()
   return result[0] ?? null
 }
