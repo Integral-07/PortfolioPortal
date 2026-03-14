@@ -69,6 +69,16 @@ make build  # イメージのみビルド
 | API | http://localhost:8787 |
 | API ヘルスチェック | http://localhost:8787/api/health |
 
+## データベース
+
+| 環境 | 使用DB | 接続先 |
+|---|---|---|
+| ローカル開発 | PostgreSQL コンテナ | `localhost:5432` |
+| 本番 | Supabase (PostgreSQL) | `.env` の `DATABASE_URL` |
+
+ローカルでは `docker compose up` 時に自動的に PostgreSQL が起動します。
+DB への直接接続が必要な場合は `localhost:5432`（user: `postgres` / pass: `postgres` / db: `portfolio_portal`）。
+
 ## パッケージ追加時
 
 新しい npm パッケージを追加した場合は Docker イメージの再ビルドが必要。
