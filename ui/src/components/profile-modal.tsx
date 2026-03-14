@@ -9,9 +9,10 @@ type Props = {
   profile?: Profile
   onClose: () => void
   onSave: () => void
+  getToken: () => Promise<string | null>
 }
 
-export default function ProfileModal({ profile, onClose, onSave }: Props) {
+export default function ProfileModal({ profile, onClose, onSave, getToken }: Props) {
   const isEdit = !!profile
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -23,18 +24,18 @@ export default function ProfileModal({ profile, onClose, onSave }: Props) {
       career: (form.elements.namedItem('career') as HTMLInputElement).value || null,
     }
 
-    if (isEdit) {
-      await fetch(`/api/profiles/${profile.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-    } else {
-      await fetch('/api/profiles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
+    const token = await getToken()
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+
+    const url = isEdit ? '/api/profiles/me' : '/api/profiles'
+    const method = isEdit ? 'PUT' : 'POST'
+
+    const res = await fetch(url, { method, headers, body: JSON.stringify(body) })
+    const data = await res.json()
+
+    if (!res.ok) {
+      alert(`エラー: ${data.error?.message ?? '保存に失敗しました'}`)
+      return
     }
 
     onSave()
