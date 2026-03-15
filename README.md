@@ -6,7 +6,7 @@
 
 | 層 | 技術 |
 |---|---|
-| フロントエンド | Vite + React (SPA) |
+| フロントエンド | Vite + React (SPA) + shadcn/ui + Tailwind CSS |
 | バックエンド API | Hono (Cloudflare Workers) |
 | データベース | Supabase (PostgreSQL) |
 | 認証 / SSO | Clerk |
@@ -78,6 +78,12 @@ make build  # イメージのみビルド
 
 ローカルでは `docker compose up` 時に自動的に PostgreSQL が起動します。
 DB への直接接続が必要な場合は `localhost:5432`（user: `postgres` / pass: `postgres` / db: `portfolio_portal`）。
+
+## UIデザイン方針
+
+- **コンポーネント**: [shadcn/ui](https://ui.shadcn.com/)（Radix UI + Tailwind CSS）
+- **スタイル**: Tailwind CSS。GitHubライクなダーク系テーマ
+- **i18n**: react-i18next による日本語 / 英語切り替え対応
 
 ## パッケージ追加時
 

@@ -1,3 +1,8 @@
+import { useTranslation } from 'react-i18next'
+import { X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+
 type Profile = {
   id: string
   name: string
@@ -13,6 +18,7 @@ type Props = {
 }
 
 export default function ProfileModal({ profile, onClose, onSave, getToken }: Props) {
+  const { t } = useTranslation()
   const isEdit = !!profile
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -20,13 +26,12 @@ export default function ProfileModal({ profile, onClose, onSave, getToken }: Pro
     const form = e.currentTarget
     const body = {
       name: (form.elements.namedItem('name') as HTMLInputElement).value,
-      qualifications: (form.elements.namedItem('qualifications') as HTMLInputElement).value || null,
-      career: (form.elements.namedItem('career') as HTMLInputElement).value || null,
+      qualifications: (form.elements.namedItem('qualifications') as HTMLTextAreaElement).value || null,
+      career: (form.elements.namedItem('career') as HTMLTextAreaElement).value || null,
     }
 
     const token = await getToken()
     const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
-
     const url = isEdit ? '/api/profiles/me' : '/api/profiles'
     const method = isEdit ? 'PUT' : 'POST'
 
@@ -34,7 +39,7 @@ export default function ProfileModal({ profile, onClose, onSave, getToken }: Pro
     const data = await res.json()
 
     if (!res.ok) {
-      alert(`エラー: ${data.error?.message ?? '保存に失敗しました'}`)
+      alert(`${data.error?.message ?? t('modal.saveError')}`)
       return
     }
 
@@ -43,24 +48,66 @@ export default function ProfileModal({ profile, onClose, onSave, getToken }: Pro
   }
 
   return (
-    <div>
-      <div>
-        <h2>{isEdit ? '編集' : '作成'}</h2>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.6)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="glass w-full max-w-md rounded-xl shadow-2xl">
+        {/* Modal header */}
+        <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: 'var(--glass-border)' }}>
+          <h2 className="font-semibold" style={{ color: 'var(--text)' }}>
+            {isEdit ? t('modal.editTitle') : t('modal.createTitle')}
+          </h2>
+          <button onClick={onClose} className="rounded p-1 transition-colors hover:opacity-70">
+            <X className="h-4 w-4" style={{ color: 'var(--text-muted)' }} />
+          </button>
+        </div>
+
+        {/* Modal body */}
         <form onSubmit={handleSubmit}>
-          <div>
-            <label>名前</label>
-            <input name="name" defaultValue={profile?.name ?? ''} required />
+          <div className="space-y-4 px-5 py-5">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                {t('modal.name')} <span style={{ color: 'var(--danger)' }}>*</span>
+              </label>
+              <Input name="name" defaultValue={profile?.name ?? ''} required />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                {t('modal.qualifications')}
+              </label>
+              <textarea
+                name="qualifications"
+                defaultValue={profile?.qualifications ?? ''}
+                rows={3}
+                className="w-full rounded-md border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                {t('modal.career')}
+              </label>
+              <textarea
+                name="career"
+                defaultValue={profile?.career ?? ''}
+                rows={4}
+                className="w-full rounded-md border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
+              />
+            </div>
           </div>
-          <div>
-            <label>資格</label>
-            <input name="qualifications" defaultValue={profile?.qualifications ?? ''} />
+
+          {/* Modal footer */}
+          <div className="flex justify-end gap-2 border-t px-5 py-4" style={{ borderColor: 'var(--glass-border)' }}>
+            <Button type="button" variant="ghost" onClick={onClose}>
+              {t('modal.cancel')}
+            </Button>
+            <Button type="submit">
+              {isEdit ? t('modal.save') : t('modal.create')}
+            </Button>
           </div>
-          <div>
-            <label>経歴</label>
-            <input name="career" defaultValue={profile?.career ?? ''} />
-          </div>
-          <button type="button" onClick={onClose}>キャンセル</button>
-          <button type="submit">{isEdit ? '更新' : '作成'}</button>
         </form>
       </div>
     </div>
