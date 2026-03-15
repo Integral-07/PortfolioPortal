@@ -2,6 +2,10 @@
 
 @layer base {
   :root {
+    --bg-gradient:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(88,166,255,0.35) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 50% at 50% 110%, rgba(88,166,255,0.35) 0%, transparent 60%),
+      #0d1117;
     --bg: #0d1117;
     --bg-subtle: #161b22;
     --border: #30363d;
@@ -11,11 +15,15 @@
     --accent-subtle: #1f6feb;
     --success: #3fb950;
     --danger: #f85149;
-    --glass-bg: rgba(22, 27, 34, 0.6);
+    --glass-bg: rgba(22, 27, 34, 0.25);
     --glass-border: rgba(255, 255, 255, 0.08);
   }
 
   :root.light {
+    --bg-gradient:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(9,105,218,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 50% at 50% 110%, rgba(130,80,223,0.12) 0%, transparent 60%),
+      #ffffff;
     --bg: #ffffff;
     --bg-subtle: #f6f8fa;
     --border: #d0d7de;
@@ -25,7 +33,7 @@
     --accent-subtle: #0550ae;
     --success: #1a7f37;
     --danger: #cf222e;
-    --glass-bg: rgba(246, 248, 250, 0.7);
+    --glass-bg: rgba(246, 248, 250, 0.35);
     --glass-border: rgba(0, 0, 0, 0.08);
   }
 
@@ -49,4 +57,94 @@
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Grain noise overlay */
+.bg-noise::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
+
+/* Colored grid cells */
+.bg-dotgrid::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    linear-gradient(var(--accent) 0 0),
+    linear-gradient(var(--success) 0 0),
+    linear-gradient(var(--accent) 0 0),
+    linear-gradient(var(--danger) 0 0),
+    linear-gradient(var(--success) 0 0),
+    linear-gradient(var(--accent) 0 0),
+    linear-gradient(var(--danger) 0 0),
+    linear-gradient(var(--accent) 0 0),
+    linear-gradient(var(--success) 0 0),
+    linear-gradient(var(--accent) 0 0);
+  background-size: 40px 40px;
+  background-position:
+    120px 80px,
+    280px 160px,
+    480px 240px,
+    200px 320px,
+    600px 120px,
+    360px 400px,
+    520px 280px,
+    160px 480px,
+    440px 40px,
+    640px 360px;
+  background-repeat: no-repeat;
+  opacity: 0.12;
+  -webkit-mask-image: radial-gradient(ellipse 85% 85% at 50% 40%, black 20%, transparent 100%);
+  mask-image: radial-gradient(ellipse 85% 85% at 50% 40%, black 20%, transparent 100%);
+}
+
+/* Gradient grid overlay */
+.bg-dotgrid::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 85% at 50% 40%, black 20%, transparent 100%);
+  mask-image: radial-gradient(ellipse 85% 85% at 50% 40%, black 20%, transparent 100%);
+  opacity: 0.5;
+}
+
+/* Minimal accent line */
+.bg-minimal::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  pointer-events: none;
+  z-index: 10;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+/* Animated gradient */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.bg-animated {
+  background-size: 300% 300% !important;
+  animation: gradientShift 12s ease infinite;
 }
