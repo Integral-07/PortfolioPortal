@@ -10,6 +10,9 @@ export default {
     sub: 'Create a portfolio with your qualifications and experience. Generate a shareable link in one click.',
     cta: 'Get started',
   },
+  dashboard: {
+    anonymousName: 'John Doe',
+  },
   portfolio: {
     title: 'Portfolios',
     create: 'Create',
