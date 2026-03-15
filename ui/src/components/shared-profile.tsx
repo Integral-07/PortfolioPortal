@@ -3,8 +3,13 @@ import { useEffect, useState } from 'react'
 type Profile = {
   id: string
   name: string
-  qualifications: string | null
-  career: string | null
+}
+
+type Field = {
+  id: string
+  label: string
+  body: string
+  order: number
 }
 
 type Props = {
@@ -13,6 +18,7 @@ type Props = {
 
 export default function SharedProfile({ token }: Props) {
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [fields, setFields] = useState<Field[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -23,29 +29,42 @@ export default function SharedProfile({ token }: Props) {
         setError(data.error?.message ?? 'プロフィールが見つかりません')
         return
       }
-      setProfile(data)
+      setProfile(data.profile)
+      setFields(data.fields ?? [])
     }
     fetch_()
   }, [token])
 
-  if (error) return <p>{error}</p>
-  if (!profile) return <p>読み込み中...</p>
+  if (error) return (
+    <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--bg)' }}>
+      <p style={{ color: 'var(--text-muted)' }}>{error}</p>
+    </div>
+  )
+
+  if (!profile) return (
+    <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--bg)' }}>
+      <p style={{ color: 'var(--text-muted)' }}>読み込み中...</p>
+    </div>
+  )
 
   return (
-    <div>
-      <h2>{profile.name}</h2>
-      {profile.qualifications && (
-        <div>
-          <h3>資格</h3>
-          <p>{profile.qualifications}</p>
+    <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+      <div className="mx-auto max-w-2xl px-6 py-16">
+        <h1 className="mb-8 text-3xl font-bold">{profile.name}</h1>
+        <div className="space-y-4">
+          {fields.map((field) => (
+            <div key={field.id} className="glass rounded-xl px-6 py-5">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                {field.label}
+              </p>
+              <p className="text-sm whitespace-pre-wrap">{field.body}</p>
+            </div>
+          ))}
+          {fields.length === 0 && (
+            <p style={{ color: 'var(--text-muted)' }}>表示できる項目がありません</p>
+          )}
         </div>
-      )}
-      {profile.career && (
-        <div>
-          <h3>経歴</h3>
-          <p>{profile.career}</p>
-        </div>
-      )}
+      </div>
     </div>
   )
 }

@@ -1,2 +1,4 @@
 export * from './profiles'
+export * from './groups'
+export * from './profile_fields'
 export * from './share_links'

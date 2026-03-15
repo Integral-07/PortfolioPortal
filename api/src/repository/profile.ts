@@ -16,10 +16,7 @@ export async function findProfileByUserId(db: DrizzleDb, userId: string) {
   return result[0] ?? null
 }
 
-export async function insertProfile(
-  db: DrizzleDb,
-  data: { userId: string; name: string; qualifications?: string | null; career?: string | null },
-) {
+export async function insertProfile(db: DrizzleDb, data: { userId: string; name: string }) {
   const result = await db.insert(profiles).values(data).returning()
   return result[0]
 }
@@ -27,7 +24,7 @@ export async function insertProfile(
 export async function updateProfileByUserId(
   db: DrizzleDb,
   userId: string,
-  data: { name?: string; qualifications?: string | null; career?: string | null; shareSlug?: string | null },
+  data: { name?: string; shareSlug?: string | null },
 ) {
   const result = await db
     .update(profiles)

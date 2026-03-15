@@ -7,6 +7,8 @@ import { databaseMiddleware } from './middleware/database'
 import { authMiddleware } from './middleware/auth'
 import { getProfiles, getProfileById, getMyProfile, createProfile, updateProfileById, deleteProfileById } from './usecase/profile'
 import { getOrCreateShareLink, resolveShareLink } from './usecase/share_link'
+import { getGroups, createGroup, updateGroupById, deleteGroupById } from './usecase/group'
+import { getFields, createField, updateFieldById, deleteFieldById } from './usecase/profile_field'
 import type {
   GetProfilesResponse,
   GetProfileResponse,
@@ -45,14 +47,13 @@ export const createApp = () =>
 
     .get('/api/health', (c) => c.json({ status: 'ok' }))
 
-    // ゲスト可
+    // profiles（ゲスト可）
     .get('/api/profiles', async (c) => {
       const db = c.get('db')
       const profiles = await getProfiles(db)
       return c.json<GetProfilesResponse>({ profiles })
     })
 
-    // 認証必須（/:id より前に定義）
     .get('/api/profiles/me', authMiddleware(), async (c) => {
       const db = c.get('db')
       const userId = c.get('userId')
@@ -64,13 +65,6 @@ export const createApp = () =>
       const db = c.get('db')
       const id = c.req.param('id')
       const profile = await getProfileById(db, id)
-      return c.json<GetProfileResponse>(profile)
-    })
-
-    .get('/api/share/:token', async (c) => {
-      const db = c.get('db')
-      const token = c.req.param('token')
-      const profile = await resolveShareLink(db, token)
       return c.json<GetProfileResponse>(profile)
     })
 
@@ -97,11 +91,86 @@ export const createApp = () =>
       return c.json<DeleteProfileResponse>(result)
     })
 
+    // profile fields
+    .get('/api/profile-fields', authMiddleware(), async (c) => {
+      const db = c.get('db')
+      const userId = c.get('userId')
+      const fields = await getFields(db, userId)
+      return c.json({ fields })
+    })
+
+    .post('/api/profile-fields', authMiddleware(), async (c) => {
+      const db = c.get('db')
+      const userId = c.get('userId')
+      const body = await c.req.json<{ label: string; body: string; groupIds?: string[] }>()
+      const field = await createField(db, userId, body)
+      return c.json(field, { status: 201 })
+    })
+
+    .put('/api/profile-fields/:id', authMiddleware(), async (c) => {
+      const db = c.get('db')
+      const userId = c.get('userId')
+      const id = c.req.param('id')
+      const body = await c.req.json<{ label?: string; body?: string; groupIds?: string[] }>()
+      const field = await updateFieldById(db, userId, id, body)
+      return c.json(field)
+    })
+
+    .delete('/api/profile-fields/:id', authMiddleware(), async (c) => {
+      const db = c.get('db')
+      const userId = c.get('userId')
+      const id = c.req.param('id')
+      const result = await deleteFieldById(db, userId, id)
+      return c.json(result)
+    })
+
+    // groups
+    .get('/api/groups', authMiddleware(), async (c) => {
+      const db = c.get('db')
+      const userId = c.get('userId')
+      const groupList = await getGroups(db, userId)
+      return c.json({ groups: groupList })
+    })
+
+    .post('/api/groups', authMiddleware(), async (c) => {
+      const db = c.get('db')
+      const userId = c.get('userId')
+      const { name } = await c.req.json<{ name: string }>()
+      const group = await createGroup(db, userId, name)
+      return c.json(group, { status: 201 })
+    })
+
+    .put('/api/groups/:id', authMiddleware(), async (c) => {
+      const db = c.get('db')
+      const userId = c.get('userId')
+      const id = c.req.param('id')
+      const { name } = await c.req.json<{ name: string }>()
+      const group = await updateGroupById(db, userId, id, name)
+      return c.json(group)
+    })
+
+    .delete('/api/groups/:id', authMiddleware(), async (c) => {
+      const db = c.get('db')
+      const userId = c.get('userId')
+      const id = c.req.param('id')
+      const result = await deleteGroupById(db, userId, id)
+      return c.json(result)
+    })
+
+    // share links
     .post('/api/share-links', authMiddleware(), async (c) => {
       const db = c.get('db')
       const userId = c.get('userId')
-      const shareLink = await getOrCreateShareLink(db, userId)
+      const body = await c.req.json<{ groupId?: string }>().catch(() => ({}))
+      const shareLink = await getOrCreateShareLink(db, userId, body.groupId)
       return c.json({ token: shareLink.token })
+    })
+
+    .get('/api/share/:token', async (c) => {
+      const db = c.get('db')
+      const token = c.req.param('token')
+      const result = await resolveShareLink(db, token)
+      return c.json(result)
     })
 
 const app = createApp()

@@ -8,6 +8,7 @@ import {
   updateProfileByUserId,
   deleteProfileByUserId,
 } from '../repository/profile'
+import { insertGroup } from '../repository/group'
 import type { PostProfileRequest, PutProfileRequest } from '../types/profiles'
 
 export async function getProfiles(db: DrizzleDb) {
@@ -30,7 +31,9 @@ export async function createProfile(db: DrizzleDb, userId: string, body: PostPro
   if (!body.name) throw new HTTPException(400, { message: 'name は必須です' })
   const existing = await findProfileByUserId(db, userId)
   if (existing) throw new HTTPException(409, { message: 'プロフィールはすでに存在します' })
-  return insertProfile(db, { userId, ...body })
+  const profile = await insertProfile(db, { userId, name: body.name })
+  await insertGroup(db, userId, 'everyone', true)
+  return profile
 }
 
 export async function updateProfileById(db: DrizzleDb, userId: string, body: PutProfileRequest) {

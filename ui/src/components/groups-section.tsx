@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuth } from '@clerk/clerk-react'
 import { Plus, Copy, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -7,33 +8,77 @@ type Group = {
   name: string
 }
 
-const DUMMY_GROUPS: Group[] = [
-  { id: '1', name: '転職活動' },
-  { id: '2', name: '友人' },
-]
-
 export default function GroupsSection() {
-  const [groups, setGroups] = useState<Group[]>(DUMMY_GROUPS)
+  const { getToken } = useAuth()
+  const [groups, setGroups] = useState<Group[]>([])
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
 
-  const handleCreate = () => {
+  const authHeaders = async () => {
+    const token = await getToken()
+    return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+  }
+
+  const fetchGroups = async () => {
+    const headers = await authHeaders()
+    const res = await fetch('/api/groups', { headers })
+    const data = await res.json()
+    if (res.ok) setGroups(data.groups)
+  }
+
+  const handleCreate = async () => {
     if (!newName.trim()) return
-    setGroups((prev) => [...prev, { id: Date.now().toString(), name: newName.trim() }])
-    setNewName('')
-    setCreating(false)
+    const headers = await authHeaders()
+    const res = await fetch('/api/groups', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ name: newName.trim() }),
+    })
+    if (res.ok) {
+      setNewName('')
+      setCreating(false)
+      fetchGroups()
+    }
   }
 
-  const handleEdit = (id: string) => {
-    setGroups((prev) => prev.map((g) => (g.id === id ? { ...g, name: editName.trim() } : g)))
-    setEditingId(null)
+  const handleEdit = async (id: string) => {
+    if (!editName.trim()) return
+    const headers = await authHeaders()
+    const res = await fetch(`/api/groups/${id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ name: editName.trim() }),
+    })
+    if (res.ok) {
+      setEditingId(null)
+      fetchGroups()
+    }
   }
 
-  const handleDelete = (id: string) => {
-    setGroups((prev) => prev.filter((g) => g.id !== id))
+  const handleDelete = async (id: string) => {
+    const headers = await authHeaders()
+    const res = await fetch(`/api/groups/${id}`, { method: 'DELETE', headers })
+    if (res.ok) fetchGroups()
   }
+
+  const handleCopyLink = async (groupId: string) => {
+    const headers = await authHeaders()
+    const res = await fetch('/api/share-links', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ groupId }),
+    })
+    const data = await res.json()
+    const url = `${window.location.origin}/share?share=${data.token}`
+    await navigator.clipboard.writeText(url)
+    alert('共有リンクをコピーしました')
+  }
+
+  useEffect(() => {
+    fetchGroups()
+  }, [])
 
   return (
     <div className="glass rounded-xl p-6">
@@ -58,7 +103,10 @@ export default function GroupsSection() {
                   autoFocus
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleEdit(group.id); if (e.key === 'Escape') setEditingId(null) }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleEdit(group.id)
+                    if (e.key === 'Escape') setEditingId(null)
+                  }}
                   className="flex-1 rounded border bg-transparent px-2 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
                   style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
                 />
@@ -69,7 +117,7 @@ export default function GroupsSection() {
               <>
                 <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>{group.name}</span>
                 <div className="flex items-center gap-1">
-                  <Button size="icon" variant="ghost" title="共有リンクをコピー">
+                  <Button size="icon" variant="ghost" title="共有リンクをコピー" onClick={() => handleCopyLink(group.id)}>
                     <Copy className="h-3.5 w-3.5" />
                   </Button>
                   <Button size="icon" variant="ghost" onClick={() => { setEditingId(group.id); setEditName(group.name) }}>
@@ -84,7 +132,6 @@ export default function GroupsSection() {
           </div>
         ))}
 
-        {/* 新規作成入力欄 */}
         {creating && (
           <div
             className="flex items-center gap-2 rounded-lg border px-4 py-3"
@@ -94,7 +141,10 @@ export default function GroupsSection() {
               autoFocus
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setCreating(false) }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreate()
+                if (e.key === 'Escape') setCreating(false)
+              }}
               placeholder="グループ名"
               className="flex-1 bg-transparent text-sm focus:outline-none"
               style={{ color: 'var(--text)' }}

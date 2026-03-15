@@ -6,8 +6,6 @@ import { Input } from '@/components/ui/input'
 type Profile = {
   id: string
   name: string
-  qualifications: string | null
-  career: string | null
 }
 
 type Props = {
@@ -26,23 +24,17 @@ export default function ProfileModal({ profile, onClose, onSave, getToken }: Pro
     const form = e.currentTarget
     const body = {
       name: (form.elements.namedItem('name') as HTMLInputElement).value,
-      qualifications: (form.elements.namedItem('qualifications') as HTMLTextAreaElement).value || null,
-      career: (form.elements.namedItem('career') as HTMLTextAreaElement).value || null,
     }
-
     const token = await getToken()
     const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
     const url = isEdit ? '/api/profiles/me' : '/api/profiles'
     const method = isEdit ? 'PUT' : 'POST'
-
     const res = await fetch(url, { method, headers, body: JSON.stringify(body) })
     const data = await res.json()
-
     if (!res.ok) {
-      alert(`${data.error?.message ?? t('modal.saveError')}`)
+      alert(data.error?.message ?? t('modal.saveError'))
       return
     }
-
     onSave()
     onClose()
   }
@@ -54,7 +46,6 @@ export default function ProfileModal({ profile, onClose, onSave, getToken }: Pro
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="glass w-full max-w-md rounded-xl shadow-2xl">
-        {/* Modal header */}
         <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: 'var(--glass-border)' }}>
           <h2 className="font-semibold" style={{ color: 'var(--text)' }}>
             {isEdit ? t('modal.editTitle') : t('modal.createTitle')}
@@ -63,50 +54,16 @@ export default function ProfileModal({ profile, onClose, onSave, getToken }: Pro
             <X className="h-4 w-4" style={{ color: 'var(--text-muted)' }} />
           </button>
         </div>
-
-        {/* Modal body */}
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4 px-5 py-5">
-            <div>
-              <label className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                {t('modal.name')} <span style={{ color: 'var(--danger)' }}>*</span>
-              </label>
-              <Input name="name" defaultValue={profile?.name ?? ''} required />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                {t('modal.qualifications')}
-              </label>
-              <textarea
-                name="qualifications"
-                defaultValue={profile?.qualifications ?? ''}
-                rows={3}
-                className="w-full rounded-md border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
-                style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                {t('modal.career')}
-              </label>
-              <textarea
-                name="career"
-                defaultValue={profile?.career ?? ''}
-                rows={4}
-                className="w-full rounded-md border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
-                style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
-              />
-            </div>
+          <div className="px-5 py-5">
+            <label className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+              {t('modal.name')} <span style={{ color: 'var(--danger)' }}>*</span>
+            </label>
+            <Input name="name" defaultValue={profile?.name ?? ''} required />
           </div>
-
-          {/* Modal footer */}
           <div className="flex justify-end gap-2 border-t px-5 py-4" style={{ borderColor: 'var(--glass-border)' }}>
-            <Button type="button" variant="ghost" onClick={onClose}>
-              {t('modal.cancel')}
-            </Button>
-            <Button type="submit">
-              {isEdit ? t('modal.save') : t('modal.create')}
-            </Button>
+            <Button type="button" variant="ghost" onClick={onClose}>{t('modal.cancel')}</Button>
+            <Button type="submit">{isEdit ? t('modal.save') : t('modal.create')}</Button>
           </div>
         </form>
       </div>

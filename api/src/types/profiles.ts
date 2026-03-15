@@ -5,8 +5,8 @@ export type Profile = InferSelectModel<typeof profiles>
 
 export type GetProfilesResponse = { profiles: Profile[] }
 export type GetProfileResponse = Profile
-export type PostProfileRequest = { name: string; qualifications?: string; career?: string }
+export type PostProfileRequest = { name: string }
 export type PostProfileResponse = Profile
-export type PutProfileRequest = { name?: string; qualifications?: string; career?: string; shareSlug?: string }
+export type PutProfileRequest = { name?: string; shareSlug?: string }
 export type PutProfileResponse = Profile
 export type DeleteProfileResponse = { id: string }
