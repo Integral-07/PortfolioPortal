@@ -1,0 +1,42 @@
+export default {
+  nav: {
+    signIn: 'Sign in',
+    signOut: 'Sign out',
+    contact: 'Contact',
+  },
+  hero: {
+    badge: 'Portfolio sharing platform',
+    headline: 'Share your career,\nsimply.',
+    sub: 'Create a portfolio with your qualifications and experience. Generate a shareable link in one click.',
+    cta: 'Get started',
+  },
+  portfolio: {
+    title: 'Portfolios',
+    create: 'Create',
+    edit: 'Edit',
+    delete: 'Delete',
+    shareLinkLabel: 'Share URL slug',
+    sharePlaceholder: 'your-name',
+    copyLink: 'Copy share link',
+    copied: 'Share link copied!',
+    empty: 'No portfolios yet',
+    deleteConfirm: 'Are you sure you want to delete?',
+  },
+  modal: {
+    createTitle: 'Create portfolio',
+    editTitle: 'Edit portfolio',
+    name: 'Name',
+    qualifications: 'Qualifications',
+    career: 'Career',
+    cancel: 'Cancel',
+    save: 'Save',
+    create: 'Create',
+    saveError: 'Failed to save',
+  },
+  shared: {
+    loading: 'Loading...',
+    notFound: 'Profile not found',
+    qualifications: 'Qualifications',
+    career: 'Career',
+  },
+}

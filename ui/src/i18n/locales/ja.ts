@@ -1,0 +1,42 @@
+export default {
+  nav: {
+    signIn: 'ログイン',
+    signOut: 'ログアウト',
+    contact: 'お問い合わせ',
+  },
+  hero: {
+    badge: 'ポートフォリオ共有プラットフォーム',
+    headline: 'あなたのキャリアを、\nシンプルに共有しよう',
+    sub: '資格・経歴をまとめてポートフォリオを作成。ワンクリックで共有リンクを発行できます。',
+    cta: 'はじめる',
+  },
+  portfolio: {
+    title: 'ポートフォリオ一覧',
+    create: '作成',
+    edit: '編集',
+    delete: '削除',
+    shareLinkLabel: '共有URL のスラッグ',
+    sharePlaceholder: 'your-name',
+    copyLink: '共有リンクをコピー',
+    copied: '共有リンクをコピーしました',
+    empty: 'まだポートフォリオがありません',
+    deleteConfirm: '本当に削除しますか？',
+  },
+  modal: {
+    createTitle: 'ポートフォリオを作成',
+    editTitle: 'ポートフォリオを編集',
+    name: '名前',
+    qualifications: '資格',
+    career: '経歴',
+    cancel: 'キャンセル',
+    save: '保存',
+    create: '作成',
+    saveError: '保存に失敗しました',
+  },
+  shared: {
+    loading: '読み込み中...',
+    notFound: 'プロフィールが見つかりません',
+    qualifications: '資格',
+    career: '経歴',
+  },
+}
