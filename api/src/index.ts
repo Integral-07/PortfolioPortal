@@ -8,7 +8,7 @@ import { authMiddleware } from './middleware/auth'
 import { getProfiles, getProfileById, getMyProfile, createProfile, updateProfileById, deleteProfileById } from './usecase/profile'
 import { getOrCreateShareLink, resolveShareLink } from './usecase/share_link'
 import { getGroups, createGroup, updateGroupById, deleteGroupById } from './usecase/group'
-import { getFields, createField, updateFieldById, deleteFieldById } from './usecase/profile_field'
+import { getFields, createField, updateFieldById, deleteFieldById, reorderFieldsByIds } from './usecase/profile_field'
 import type {
   GetProfilesResponse,
   GetProfileResponse,
@@ -102,16 +102,24 @@ export const createApp = () =>
     .post('/api/profile-fields', authMiddleware(), async (c) => {
       const db = c.get('db')
       const userId = c.get('userId')
-      const body = await c.req.json<{ label: string; body: string; groupIds?: string[] }>()
+      const body = await c.req.json<{ label: string; body?: string; groupIds?: string[]; type?: string }>()
       const field = await createField(db, userId, body)
       return c.json(field, { status: 201 })
+    })
+
+    .put('/api/profile-fields/reorder', authMiddleware(), async (c) => {
+      const db = c.get('db')
+      const userId = c.get('userId')
+      const { ids } = await c.req.json<{ ids: string[] }>()
+      await reorderFieldsByIds(db, userId, ids)
+      return c.json({ ok: true })
     })
 
     .put('/api/profile-fields/:id', authMiddleware(), async (c) => {
       const db = c.get('db')
       const userId = c.get('userId')
       const id = c.req.param('id')
-      const body = await c.req.json<{ label?: string; body?: string; groupIds?: string[] }>()
+      const body = await c.req.json<{ label?: string; body?: string; groupIds?: string[]; type?: string }>()
       const field = await updateFieldById(db, userId, id, body)
       return c.json(field)
     })

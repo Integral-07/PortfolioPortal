@@ -5,8 +5,9 @@ import { groups } from './groups'
 export const profileFields = pgTable('profile_fields', {
   id: uuid('id').primaryKey().defaultRandom(),
   profileId: uuid('profile_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+  type: text('type').notNull().default('field'),
   label: text('label').notNull(),
-  body: text('body').notNull(),
+  body: text('body').notNull().default(''),
   order: integer('order').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

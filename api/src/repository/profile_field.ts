@@ -1,9 +1,9 @@
-import { eq, inArray } from 'drizzle-orm'
+import { eq, inArray, asc } from 'drizzle-orm'
 import type { DrizzleDb } from '../db/client'
 import { profileFields, fieldGroupVisibility } from '../../../db/src/schema'
 
 export async function findFieldsByProfileId(db: DrizzleDb, profileId: string) {
-  return db.select().from(profileFields).where(eq(profileFields.profileId, profileId))
+  return db.select().from(profileFields).where(eq(profileFields.profileId, profileId)).orderBy(asc(profileFields.order))
 }
 
 export async function findFieldById(db: DrizzleDb, id: string) {
@@ -14,7 +14,7 @@ export async function findFieldById(db: DrizzleDb, id: string) {
 export async function insertField(
   db: DrizzleDb,
   profileId: string,
-  data: { label: string; body: string; order?: number },
+  data: { label: string; body?: string; order?: number; type?: string },
 ) {
   const result = await db.insert(profileFields).values({ profileId, ...data }).returning()
   return result[0]
@@ -23,7 +23,7 @@ export async function insertField(
 export async function updateField(
   db: DrizzleDb,
   id: string,
-  data: { label?: string; body?: string; order?: number },
+  data: { label?: string; body?: string; order?: number; type?: string },
 ) {
   const result = await db
     .update(profileFields)
@@ -52,6 +52,14 @@ export async function setFieldGroupVisibility(db: DrizzleDb, fieldId: string, gr
   await db.insert(fieldGroupVisibility).values(groupIds.map((groupId) => ({ fieldId, groupId })))
 }
 
+export async function reorderFields(db: DrizzleDb, fieldOrders: { id: string; order: number }[]) {
+  await Promise.all(
+    fieldOrders.map(({ id, order }) =>
+      db.update(profileFields).set({ order, updatedAt: new Date() }).where(eq(profileFields.id, id)),
+    ),
+  )
+}
+
 export async function findFieldsByGroupId(db: DrizzleDb, groupId: string) {
   const visibleFieldIds = await db
     .select({ fieldId: fieldGroupVisibility.fieldId })
@@ -64,4 +72,5 @@ export async function findFieldsByGroupId(db: DrizzleDb, groupId: string) {
     .select()
     .from(profileFields)
     .where(inArray(profileFields.id, visibleFieldIds.map((r) => r.fieldId)))
+    .orderBy(asc(profileFields.order))
 }

@@ -1,12 +1,12 @@
-import { SignInButton, SignOutButton, useAuth, useUser } from '@clerk/clerk-react'
+import { SignInButton, UserButton, useAuth } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import { Moon, Sun } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/lib/use-theme'
 
 export default function Header() {
   const { isSignedIn } = useAuth()
-  const { user } = useUser()
   const { t, i18n } = useTranslation()
   const { theme, toggle } = useTheme()
 
@@ -16,24 +16,7 @@ export default function Header() {
       style={{ background: theme === 'dark' ? 'rgba(13,17,23,0.8)' : 'rgba(255,255,255,0.8)', borderColor: 'var(--border)' }}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-        <div className="flex items-center gap-4">
-          <span className="text-base font-semibold tracking-tight">Portfolio Portal</span>
-          {isSignedIn && user && (
-            <div className="flex items-center gap-2">
-              {user.imageUrl && (
-                <img
-                  src={user.imageUrl}
-                  alt={user.fullName ?? ''}
-                  className="h-7 w-7 rounded-full object-cover"
-                />
-              )}
-              <div className="leading-tight">
-                <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{user.fullName}</p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{user.primaryEmailAddress?.emailAddress}</p>
-              </div>
-            </div>
-          )}
-        </div>
+        <Link to="/" className="text-base font-semibold tracking-tight hover:opacity-75 transition-opacity">Portfolio Portal</Link>
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={toggle}>
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -49,9 +32,7 @@ export default function Header() {
             <a href="mailto:contact@example.com">{t('nav.contact')}</a>
           </Button>
           {isSignedIn ? (
-            <SignOutButton>
-              <Button variant="outline" size="sm">{t('nav.signOut')}</Button>
-            </SignOutButton>
+            <UserButton />
           ) : (
             <SignInButton>
               <Button size="sm">{t('nav.signIn')}</Button>

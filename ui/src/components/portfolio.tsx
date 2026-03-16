@@ -1,11 +1,27 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
-import { Link, Pencil, Trash2, Copy, Plus } from 'lucide-react'
+import { Link, Pencil, Trash2, Copy, Plus, GripVertical } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import ProfileModal from './profile-modal'
 import FieldModal from './field-modal'
+import HeadingModal from './heading-modal'
 
 type Profile = {
   id: string
@@ -17,6 +33,7 @@ type Profile = {
 
 type Field = {
   id: string
+  type: string
   label: string
   body: string
   order: number
@@ -25,15 +42,98 @@ type Field = {
 
 type ProfileModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit'; profile: Profile }
 type FieldModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit'; field: Field }
+type HeadingModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit'; field: Field }
+
+type Group = { id: string; name: string }
+
+function SortableFieldItem({
+  field,
+  groups,
+  onEdit,
+  onEditHeading,
+  onDelete,
+}: {
+  field: Field
+  groups: Group[]
+  onEdit: (f: Field) => void
+  onEditHeading: (f: Field) => void
+  onDelete: (id: string) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {field.type === 'heading' ? (
+        <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center gap-2 flex-1">
+            <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none">
+              <GripVertical className="h-4 w-4" style={{ color: 'var(--text-muted)' }} />
+            </button>
+            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{field.label}</p>
+          </div>
+          <div className="flex gap-1 shrink-0">
+            <Button variant="ghost" size="icon" onClick={() => onEditHeading(field)}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="danger" size="icon" onClick={() => onDelete(field.id)}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div
+          className="flex items-start justify-between rounded-lg border px-4 py-3"
+          style={{ borderColor: 'var(--glass-border)', background: 'rgba(255,255,255,0.03)' }}
+        >
+          <div className="flex items-start gap-2 flex-1 min-w-0">
+            <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none mt-0.5">
+              <GripVertical className="h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
+            </button>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{field.label}</p>
+                {field.groupIds.map((gid) => {
+                  const g = groups.find((g) => g.id === gid)
+                  return g ? (
+                    <span key={gid} className="rounded-full px-2 py-0.5 text-xs" style={{ background: 'rgba(88,166,255,0.15)', color: 'var(--accent)' }}>
+                      {g.name}
+                    </span>
+                  ) : null
+                })}
+              </div>
+              <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text)' }}>{field.body}</p>
+            </div>
+          </div>
+          <div className="flex gap-1 ml-4 shrink-0">
+            <Button variant="ghost" size="icon" onClick={() => onEdit(field)}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="danger" size="icon" onClick={() => onDelete(field.id)}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function Portfolio() {
   const { getToken } = useAuth()
   const { t } = useTranslation()
   const [myProfile, setMyProfile] = useState<Profile | null>(null)
   const [fields, setFields] = useState<Field[]>([])
+  const [groups, setGroups] = useState<Group[]>([])
   const [shareSlug, setShareSlug] = useState('')
   const [profileModal, setProfileModal] = useState<ProfileModalState>({ type: 'closed' })
   const [fieldModal, setFieldModal] = useState<FieldModalState>({ type: 'closed' })
+  const [headingModal, setHeadingModal] = useState<HeadingModalState>({ type: 'closed' })
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   const authHeaders = async () => {
     const token = await getToken()
@@ -52,11 +152,18 @@ export default function Portfolio() {
     }
   }
 
+  const fetchGroups = async () => {
+    const headers = await authHeaders()
+    const res = await fetch('/api/groups', { headers })
+    const data = await res.json()
+    if (res.ok) setGroups(data.groups)
+  }
+
   const fetchFields = async () => {
     const headers = await authHeaders()
     const res = await fetch('/api/profile-fields', { headers })
     const data = await res.json()
-    if (res.ok) setFields(data.fields)
+    if (res.ok) setFields([...data.fields].sort((a: Field, b: Field) => a.order - b.order))
   }
 
   const handleSlugBlur = async () => {
@@ -87,6 +194,21 @@ export default function Portfolio() {
     setFields([])
   }
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = fields.findIndex((f) => f.id === active.id)
+    const newIndex = fields.findIndex((f) => f.id === over.id)
+    const reordered = arrayMove(fields, oldIndex, newIndex)
+    setFields(reordered)
+    const headers = await authHeaders()
+    await fetch('/api/profile-fields/reorder', {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ ids: reordered.map((f) => f.id) }),
+    })
+  }
+
   const handleDeleteField = async (fieldId: string) => {
     const headers = await authHeaders()
     await fetch(`/api/profile-fields/${fieldId}`, { method: 'DELETE', headers })
@@ -95,6 +217,7 @@ export default function Portfolio() {
 
   useEffect(() => {
     fetchMyProfile()
+    fetchGroups()
   }, [])
 
   useEffect(() => {
@@ -145,10 +268,16 @@ export default function Portfolio() {
               <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
                 項目
               </p>
-              <Button size="sm" variant="outline" onClick={() => setFieldModal({ type: 'create' })}>
-                <Plus className="h-3.5 w-3.5" />
-                項目を追加
-              </Button>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setHeadingModal({ type: 'create' })}>
+                  <Plus className="h-3.5 w-3.5" />
+                  見出しを追加
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setFieldModal({ type: 'create' })}>
+                  <Plus className="h-3.5 w-3.5" />
+                  項目を追加
+                </Button>
+              </div>
             </div>
 
             {fields.length === 0 && (
@@ -157,26 +286,20 @@ export default function Portfolio() {
               </p>
             )}
 
-            {fields.map((field) => (
-              <div
-                key={field.id}
-                className="flex items-start justify-between rounded-lg border px-4 py-3"
-                style={{ borderColor: 'var(--glass-border)', background: 'rgba(255,255,255,0.03)' }}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{field.label}</p>
-                  <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text)' }}>{field.body}</p>
-                </div>
-                <div className="flex gap-1 ml-4 shrink-0">
-                  <Button variant="ghost" size="icon" onClick={() => setFieldModal({ type: 'edit', field })}>
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="danger" size="icon" onClick={() => handleDeleteField(field.id)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+                {fields.map((field) => (
+                  <SortableFieldItem
+                    key={field.id}
+                    field={field}
+                    groups={groups}
+                    onEdit={(f) => setFieldModal({ type: 'edit', field: f })}
+                    onEditHeading={(f) => setHeadingModal({ type: 'edit', field: f })}
+                    onDelete={handleDeleteField}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           </div>
 
           {/* 共有リンク */}
@@ -219,6 +342,15 @@ export default function Portfolio() {
         <FieldModal
           field={fieldModal.type === 'edit' ? fieldModal.field : undefined}
           onClose={() => setFieldModal({ type: 'closed' })}
+          onSave={fetchFields}
+          getToken={getToken}
+        />
+      )}
+
+      {headingModal.type !== 'closed' && (
+        <HeadingModal
+          heading={headingModal.type === 'edit' ? { id: headingModal.field.id, label: headingModal.field.label, groupIds: headingModal.field.groupIds } : undefined}
+          onClose={() => setHeadingModal({ type: 'closed' })}
           onSave={fetchFields}
           getToken={getToken}
         />
