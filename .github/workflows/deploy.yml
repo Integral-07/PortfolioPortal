@@ -81,7 +81,9 @@ jobs:
 
       - run: pnpm install
 
-      - run: echo "ignore-workspace-root-check=true" >> .npmrc
+      - run: |
+          echo "ignore-workspace-root-check=true" >> .npmrc
+          echo "ignore-workspace-root-check=true" >> ui/.npmrc
 
       - name: Build UI
         run: pnpm --filter ui build
