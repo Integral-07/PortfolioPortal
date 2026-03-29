@@ -36,7 +36,7 @@ export const createApp = () =>
 
     .use('*', logger())
 
-    .use('*', cors({ origin: ['http://localhost:5173'] }))
+    .use('*', cors({ origin: ['http://localhost:5173', 'https://portfolio-portal.pages.dev'] }))
 
     .use('*', databaseMiddleware())
 
