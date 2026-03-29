@@ -80,6 +80,7 @@ jobs:
       - run: pnpm install
 
       - name: Create _redirects for API proxy
+        if: ${{ secrets.WORKERS_URL != '' }}
         run: |
           echo "/api/* ${{ secrets.WORKERS_URL }}/api/:splat 200" > ui/public/_redirects
 
