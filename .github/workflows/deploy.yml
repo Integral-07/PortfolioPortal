@@ -83,11 +83,6 @@ jobs:
 
       - run: echo "ignore-workspace-root-check=true" >> .npmrc
 
-      - name: Create _redirects for API proxy
-        run: |
-          mkdir -p ui/public
-          echo "/api/* ${{ secrets.WORKERS_URL }}/api/:splat 200" > ui/public/_redirects
-
       - name: Build UI
         run: pnpm --filter ui build
         env:
@@ -98,4 +93,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy ui/dist --project-name=portfolio-portal --commit-dirty=true
+          workingDirectory: ui
+          command: pages deploy dist --project-name=portfolio-portal --commit-dirty=true
