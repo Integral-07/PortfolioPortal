@@ -81,9 +81,7 @@ jobs:
 
       - run: pnpm install
 
-      - run: |
-          echo "ignore-workspace-root-check=true" >> .npmrc
-          echo "ignore-workspace-root-check=true" >> ui/.npmrc
+      - run: echo "ignore-workspace-root-check=true" >> .npmrc
 
       - name: Build UI
         run: pnpm --filter ui build
@@ -95,5 +93,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: ui
-          command: pages deploy dist --project-name=portfolio-portal --commit-dirty=true
+          command: pages deploy ui/dist --project-name=portfolio-portal --commit-dirty=true
