@@ -13,6 +13,7 @@ export default function GroupsSection() {
   const [groups, setGroups] = useState<Group[]>([])
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
 
@@ -29,13 +30,15 @@ export default function GroupsSection() {
   }
 
   const handleCreate = async () => {
-    if (!newName.trim()) return
+    if (!newName.trim() || submitting) return
+    setSubmitting(true)
     const headers = await authHeaders()
     const res = await fetch('/api/groups', {
       method: 'POST',
       headers,
       body: JSON.stringify({ name: newName.trim() }),
     })
+    setSubmitting(false)
     if (res.ok) {
       setNewName('')
       setCreating(false)
