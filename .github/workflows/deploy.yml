@@ -81,6 +81,7 @@ jobs:
 
       - name: Create _redirects for API proxy
         run: |
+          mkdir -p ui/public
           echo "/api/* ${{ secrets.WORKERS_URL }}/api/:splat 200" > ui/public/_redirects
 
       - name: Build UI
