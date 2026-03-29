@@ -47,7 +47,7 @@ type FieldModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit';
 type HeadingModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit'; field: Field }
 type LinkModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit'; field: Field }
 
-type Group = { id: string; name: string }
+type Group = { id: string; name: string; isDefault: boolean }
 
 function SortableFieldItem({
   field,
