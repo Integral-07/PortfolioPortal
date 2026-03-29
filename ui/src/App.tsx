@@ -3,6 +3,7 @@ import Root from '@/components/root'
 import LandingPage from '@/pages/landing'
 import DashboardPage from '@/pages/dashboard'
 import MePage from '@/pages/me'
+import GroupsPage from '@/pages/groups'
 import SharedView from '@/pages/shared-view'
 
 const router = createBrowserRouter([
@@ -21,6 +22,10 @@ const router = createBrowserRouter([
       {
         path: 'me',
         element: <MePage />,
+      },
+      {
+        path: 'groups',
+        element: <GroupsPage />,
       },
       {
         path: ':slug',

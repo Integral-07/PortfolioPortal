@@ -2,6 +2,10 @@
 # @cloudflare/workerd バイナリは glibc でコンパイルされており、
 # Alpine 上では ELF インタープリタが見つからず ENOENT で起動に失敗するため。
 FROM node:20-slim
+# node:20-slim はCAルート証明書を含まないため、workerdがHTTPS外部フェッチ時に
+# 「TLS peer's certificate is not trusted」エラーで落ちる。
+# ca-certificates を入れることで workerd がSSL証明書を検証できるようになる。
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN npm install -g pnpm
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml tsconfig.base.json ./

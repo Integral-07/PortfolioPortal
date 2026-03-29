@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 type Profile = {
   id: string
   name: string
+  bio?: string | null
 }
 
 type Props = {
@@ -24,6 +25,7 @@ export default function ProfileModal({ profile, onClose, onSave, getToken }: Pro
     const form = e.currentTarget
     const body = {
       name: (form.elements.namedItem('name') as HTMLInputElement).value,
+      bio: (form.elements.namedItem('bio') as HTMLTextAreaElement).value || null,
     }
     const token = await getToken()
     const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
@@ -45,7 +47,7 @@ export default function ProfileModal({ profile, onClose, onSave, getToken }: Pro
       style={{ background: 'rgba(0,0,0,0.6)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="glass w-full max-w-md rounded-xl shadow-2xl">
+      <div className="glass w-full max-w-md rounded-xl shadow-2xl" style={{ background: 'var(--bg-subtle)', backdropFilter: 'none', WebkitBackdropFilter: 'none' }}>
         <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: 'var(--glass-border)' }}>
           <h2 className="font-semibold" style={{ color: 'var(--text)' }}>
             {isEdit ? t('modal.editTitle') : t('modal.createTitle')}
@@ -55,11 +57,26 @@ export default function ProfileModal({ profile, onClose, onSave, getToken }: Pro
           </button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="px-5 py-5">
-            <label className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-              {t('modal.name')} <span style={{ color: 'var(--danger)' }}>*</span>
-            </label>
-            <Input name="name" defaultValue={profile?.name ?? ''} required />
+          <div className="space-y-4 px-5 py-5">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                {t('modal.name')} <span style={{ color: 'var(--danger)' }}>*</span>
+              </label>
+              <Input name="name" defaultValue={profile?.name ?? ''} required />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                紹介文
+              </label>
+              <textarea
+                name="bio"
+                defaultValue={profile?.bio ?? ''}
+                rows={3}
+                placeholder="自己紹介を入力..."
+                className="w-full rounded-md border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
+              />
+            </div>
           </div>
           <div className="flex justify-end gap-2 border-t px-5 py-4" style={{ borderColor: 'var(--glass-border)' }}>
             <Button type="button" variant="ghost" onClick={onClose}>{t('modal.cancel')}</Button>

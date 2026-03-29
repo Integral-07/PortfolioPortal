@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
-import { Link, Pencil, Trash2, Copy, Plus, GripVertical } from 'lucide-react'
+import { Link, Pencil, Trash2, Copy, Plus, GripVertical, ExternalLink } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -22,10 +22,12 @@ import { Input } from '@/components/ui/input'
 import ProfileModal from './profile-modal'
 import FieldModal from './field-modal'
 import HeadingModal from './heading-modal'
+import LinkModal from './link-modal'
 
 type Profile = {
   id: string
   name: string
+  bio?: string | null
   shareSlug: string | null
   createdAt: string
   updatedAt: string
@@ -43,6 +45,7 @@ type Field = {
 type ProfileModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit'; profile: Profile }
 type FieldModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit'; field: Field }
 type HeadingModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit'; field: Field }
+type LinkModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit'; field: Field }
 
 type Group = { id: string; name: string }
 
@@ -51,12 +54,14 @@ function SortableFieldItem({
   groups,
   onEdit,
   onEditHeading,
+  onEditLink,
   onDelete,
 }: {
   field: Field
   groups: Group[]
   onEdit: (f: Field) => void
   onEditHeading: (f: Field) => void
+  onEditLink: (f: Field) => void
   onDelete: (id: string) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id })
@@ -67,15 +72,17 @@ function SortableFieldItem({
   }
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2">
+      <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none shrink-0">
+        <GripVertical className="h-4 w-4" style={{ color: 'var(--text-muted)' }} />
+      </button>
+      <div className="flex-1 min-w-0">
       {field.type === 'heading' ? (
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-2 flex-1">
-            <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none">
-              <GripVertical className="h-4 w-4" style={{ color: 'var(--text-muted)' }} />
-            </button>
-            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{field.label}</p>
-          </div>
+        <div
+          className="flex items-center justify-between rounded-lg border px-4 py-3"
+          style={{ borderColor: 'var(--glass-border)', background: 'rgba(88,166,255,0.06)' }}
+        >
+          <p className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>{field.label}</p>
           <div className="flex gap-1 shrink-0">
             <Button variant="ghost" size="icon" onClick={() => onEditHeading(field)}>
               <Pencil className="h-3.5 w-3.5" />
@@ -90,10 +97,7 @@ function SortableFieldItem({
           className="flex items-start justify-between rounded-lg border px-4 py-3"
           style={{ borderColor: 'var(--glass-border)', background: 'rgba(255,255,255,0.03)' }}
         >
-          <div className="flex items-start gap-2 flex-1 min-w-0">
-            <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none mt-0.5">
-              <GripVertical className="h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
-            </button>
+          <div className="flex-1 min-w-0">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{field.label}</p>
@@ -106,11 +110,18 @@ function SortableFieldItem({
                   ) : null
                 })}
               </div>
-              <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text)' }}>{field.body}</p>
+              {field.type === 'link' ? (
+                <a href={field.body} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-sm" style={{ color: 'var(--accent)' }}>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  {field.body}
+                </a>
+              ) : (
+                <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text)' }}>{field.body}</p>
+              )}
             </div>
           </div>
           <div className="flex gap-1 ml-4 shrink-0">
-            <Button variant="ghost" size="icon" onClick={() => onEdit(field)}>
+            <Button variant="ghost" size="icon" onClick={() => field.type === 'link' ? onEditLink(field) : onEdit(field)}>
               <Pencil className="h-3.5 w-3.5" />
             </Button>
             <Button variant="danger" size="icon" onClick={() => onDelete(field.id)}>
@@ -119,6 +130,7 @@ function SortableFieldItem({
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
@@ -133,6 +145,7 @@ export default function Portfolio() {
   const [profileModal, setProfileModal] = useState<ProfileModalState>({ type: 'closed' })
   const [fieldModal, setFieldModal] = useState<FieldModalState>({ type: 'closed' })
   const [headingModal, setHeadingModal] = useState<HeadingModalState>({ type: 'closed' })
+  const [linkModal, setLinkModal] = useState<LinkModalState>({ type: 'closed' })
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   const authHeaders = async () => {
@@ -250,16 +263,25 @@ export default function Portfolio() {
       {myProfile && (
         <div className="glass rounded-xl">
           {/* プロフィールヘッダー */}
-          <div className="flex items-start justify-between border-b px-6 py-4" style={{ borderColor: 'var(--glass-border)' }}>
-            <h3 className="text-xl font-semibold" style={{ color: 'var(--text)' }}>{myProfile.name}</h3>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="icon" onClick={() => setProfileModal({ type: 'edit', profile: myProfile })}>
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button variant="danger" size="icon" onClick={handleDeleteProfile}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
+          <div className="px-6 pt-4 pb-0">
+            <div className="flex items-start justify-between">
+              <h3 className="text-xl font-semibold" style={{ color: 'var(--text)' }}>{myProfile.name}</h3>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="icon" onClick={() => setProfileModal({ type: 'edit', profile: myProfile })}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button variant="danger" size="icon" onClick={handleDeleteProfile}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
+            {myProfile.bio && (
+              <div className="mt-3 rounded-lg border px-4 py-3" style={{ borderColor: 'var(--glass-border)', background: 'rgba(255,255,255,0.03)' }}>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>紹介文</p>
+                <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text)' }}>{myProfile.bio}</p>
+              </div>
+            )}
+            <div className="mt-4 border-b" style={{ borderColor: 'var(--glass-border)' }} />
           </div>
 
           {/* フィールド一覧 */}
@@ -276,6 +298,10 @@ export default function Portfolio() {
                 <Button size="sm" variant="outline" onClick={() => setFieldModal({ type: 'create' })}>
                   <Plus className="h-3.5 w-3.5" />
                   項目を追加
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setLinkModal({ type: 'create' })}>
+                  <Plus className="h-3.5 w-3.5" />
+                  リンクを追加
                 </Button>
               </div>
             </div>
@@ -295,6 +321,7 @@ export default function Portfolio() {
                     groups={groups}
                     onEdit={(f) => setFieldModal({ type: 'edit', field: f })}
                     onEditHeading={(f) => setHeadingModal({ type: 'edit', field: f })}
+                    onEditLink={(f) => setLinkModal({ type: 'edit', field: f })}
                     onDelete={handleDeleteField}
                   />
                 ))}
@@ -342,6 +369,17 @@ export default function Portfolio() {
         <FieldModal
           field={fieldModal.type === 'edit' ? fieldModal.field : undefined}
           onClose={() => setFieldModal({ type: 'closed' })}
+          onSave={fetchFields}
+          getToken={getToken}
+        />
+      )}
+
+      {linkModal.type !== 'closed' && (
+        <LinkModal
+          field={linkModal.type === 'edit' ? linkModal.field : undefined}
+          groups={groups}
+          defaultGroupId={groups.find((g) => g.isDefault)?.id}
+          onClose={() => setLinkModal({ type: 'closed' })}
           onSave={fetchFields}
           getToken={getToken}
         />

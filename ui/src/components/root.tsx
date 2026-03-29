@@ -18,7 +18,9 @@ function RootContent() {
   return (
     <>
       <Header />
-      <Outlet />
+      <div className="pt-[30px]">
+        <Outlet />
+      </div>
     </>
   )
 }
@@ -27,8 +29,8 @@ export default function Root() {
   useTheme()
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-dotgrid" style={{ color: 'var(--text)' }}>
-      <div className="fixed inset-0 -z-10" style={{ background: 'var(--bg-gradient)' }} />
+    <div style={{ color: 'var(--text)' }}>
+      <div className="fixed inset-0 -z-10 bg-dotgrid" style={{ background: 'var(--bg-gradient)' }} />
       <ClerkInitializer />
       <Suspense fallback={null}>
         <RootContent />

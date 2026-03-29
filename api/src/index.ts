@@ -8,6 +8,7 @@ import { authMiddleware } from './middleware/auth'
 import { getProfiles, getProfileById, getMyProfile, createProfile, updateProfileById, deleteProfileById } from './usecase/profile'
 import { getOrCreateShareLink, resolveShareLink } from './usecase/share_link'
 import { getGroups, createGroup, updateGroupById, deleteGroupById } from './usecase/group'
+import { getFavorites, toggleFavorite, checkFavorite } from './usecase/favorite'
 import { getFields, createField, updateFieldById, deleteFieldById, reorderFieldsByIds } from './usecase/profile_field'
 import type {
   GetProfilesResponse,
@@ -162,6 +163,70 @@ export const createApp = () =>
       const userId = c.get('userId')
       const id = c.req.param('id')
       const result = await deleteGroupById(db, userId, id)
+      return c.json(result)
+    })
+
+    // OGP
+    .get('/api/ogp', async (c) => {
+      const url = c.req.query('url')
+      if (!url) return c.json({ error: 'url is required' }, 400)
+      try {
+        new URL(url)
+      } catch {
+        return c.json({ error: 'invalid url' }, 400)
+      }
+      try {
+        const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; PortfolioBot/1.0)' } })
+        if (!res.ok) return c.json({ title: null, description: null, image: null, url }, 200)
+        const ogp: { title: string | null; description: string | null; image: string | null; url: string } = {
+          title: null, description: null, image: null, url,
+        }
+        await new HTMLRewriter()
+          .on('meta', {
+            element(el) {
+              const prop = el.getAttribute('property') ?? el.getAttribute('name')
+              const content = el.getAttribute('content')
+              if (!content) return
+              if (prop === 'og:title' && !ogp.title) ogp.title = content
+              if (prop === 'og:description' && !ogp.description) ogp.description = content
+              if (prop === 'og:image' && !ogp.image) ogp.image = content
+              if (prop === 'og:url') ogp.url = content
+            },
+          })
+          .on('title', {
+            text(chunk) {
+              if (!ogp.title) ogp.title = (ogp.title ?? '') + chunk.text
+            },
+          })
+          .transform(res)
+          .arrayBuffer()
+        return c.json(ogp)
+      } catch {
+        return c.json({ title: null, description: null, image: null, url }, 200)
+      }
+    })
+
+    // favorites
+    .get('/api/favorites', authMiddleware(), async (c) => {
+      const db = c.get('db')
+      const userId = c.get('userId')
+      const favs = await getFavorites(db, userId)
+      return c.json({ favorites: favs })
+    })
+
+    .get('/api/favorites/:profileId', authMiddleware(), async (c) => {
+      const db = c.get('db')
+      const userId = c.get('userId')
+      const profileId = c.req.param('profileId')
+      const result = await checkFavorite(db, userId, profileId)
+      return c.json(result)
+    })
+
+    .post('/api/favorites/:profileId', authMiddleware(), async (c) => {
+      const db = c.get('db')
+      const userId = c.get('userId')
+      const profileId = c.req.param('profileId')
+      const result = await toggleFavorite(db, userId, profileId)
       return c.json(result)
     })
 

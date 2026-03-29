@@ -72,7 +72,7 @@ export default function HeadingModal({ heading, onClose, onSave, getToken }: Pro
       style={{ background: 'rgba(0,0,0,0.6)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="glass w-full max-w-md rounded-xl shadow-2xl">
+      <div className="glass w-full max-w-md rounded-xl shadow-2xl" style={{ background: 'var(--bg-subtle)', backdropFilter: 'none', WebkitBackdropFilter: 'none' }}>
         <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: 'var(--glass-border)' }}>
           <h2 className="font-semibold" style={{ color: 'var(--text)' }}>
             {isEdit ? '見出しを編集' : '見出しを追加'}

@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
+import { Star } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useAuth, useClerk } from '@clerk/clerk-react'
+import OgpCard from './ogp-card'
 
 type Profile = {
   id: string
   name: string
+  bio?: string | null
 }
 
 type Field = {
@@ -19,9 +24,12 @@ type Props = {
 }
 
 export default function SharedProfile({ token }: Props) {
+  const { isSignedIn, getToken } = useAuth()
+  const { openSignIn } = useClerk()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [fields, setFields] = useState<Field[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [favorited, setFavorited] = useState(false)
 
   useEffect(() => {
     const fetch_ = async () => {
@@ -33,9 +41,20 @@ export default function SharedProfile({ token }: Props) {
       }
       setProfile(data.profile)
       setFields(data.fields ?? [])
+
+      if (isSignedIn) {
+        const authToken = await getToken()
+        const favRes = await fetch(`/api/favorites/${data.profile.id}`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        })
+        if (favRes.ok) {
+          const favData = await favRes.json()
+          setFavorited(favData.favorited)
+        }
+      }
     }
     fetch_()
-  }, [token])
+  }, [token, isSignedIn])
 
   if (error) return (
     <div className="flex min-h-screen items-center justify-center">
@@ -53,8 +72,34 @@ export default function SharedProfile({ token }: Props) {
     <div className="min-h-screen">
       <div className="mx-auto max-w-3xl px-6 py-16">
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold tracking-tight">{profile.name}</h1>
-          <div className="mt-3 h-px" style={{ background: 'linear-gradient(90deg, transparent, var(--accent) 8%, var(--accent) 92%, transparent)' }} />
+          <div className="flex items-center justify-center gap-3">
+            <h1 className="text-4xl font-bold tracking-tight">{profile.name}</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={async () => {
+                if (!isSignedIn) {
+                  openSignIn()
+                  return
+                }
+                const authToken = await getToken()
+                const res = await fetch(`/api/favorites/${profile.id}`, {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${authToken}` },
+                })
+                if (res.ok) {
+                  const data = await res.json()
+                  setFavorited(data.favorited)
+                }
+              }}
+            >
+              <Star className="h-5 w-5" style={{ fill: favorited ? 'var(--accent)' : 'none', color: favorited ? 'var(--accent)' : 'var(--text-muted)' }} />
+            </Button>
+          </div>
+          <div className="mt-4 h-px" style={{ background: 'linear-gradient(90deg, transparent, var(--accent) 8%, var(--accent) 92%, transparent)' }} />
+          {profile.bio && (
+            <p className="mt-4 text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{profile.bio}</p>
+          )}
         </div>
         <div className="space-y-4">
           {fields.map((field) => (
@@ -63,6 +108,8 @@ export default function SharedProfile({ token }: Props) {
                 <h2 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>{field.label}</h2>
                 <div className="mt-1 h-px" style={{ background: 'linear-gradient(90deg, var(--accent), transparent)' }} />
               </div>
+            ) : field.type === 'link' ? (
+              <OgpCard key={field.id} url={field.body} label={field.label} />
             ) : (
               <div key={field.id} className="glass rounded-xl px-6 py-5">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--accent)' }}>

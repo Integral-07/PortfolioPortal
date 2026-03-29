@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useState } from 'react'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-type Field = {
+type LinkField = {
   id: string
   label: string
   body: string
@@ -18,36 +17,19 @@ type Group = {
 }
 
 type Props = {
-  field?: Field
+  field?: LinkField
+  groups: Group[]
+  defaultGroupId?: string
   onClose: () => void
   onSave: () => void
   getToken: () => Promise<string | null>
 }
 
-export default function FieldModal({ field, onClose, onSave, getToken }: Props) {
-  const { t } = useTranslation()
+export default function LinkModal({ field, groups, defaultGroupId, onClose, onSave, getToken }: Props) {
   const isEdit = !!field
-  const [groups, setGroups] = useState<Group[]>([])
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>(field?.groupIds ?? [])
-
-  useEffect(() => {
-    const fetchGroups = async () => {
-      const token = await getToken()
-      const res = await fetch('/api/groups', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      const data = await res.json()
-      if (!res.ok) return
-      const fetchedGroups: Group[] = data.groups
-      setGroups(fetchedGroups)
-      // 新規作成時はデフォルトグループを初期選択
-      if (!field) {
-        const defaultGroup = fetchedGroups.find((g) => g.isDefault)
-        if (defaultGroup) setSelectedGroupIds([defaultGroup.id])
-      }
-    }
-    fetchGroups()
-  }, [])
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>(
+    field?.groupIds ?? (defaultGroupId ? [defaultGroupId] : []),
+  )
 
   const toggleGroup = (id: string) => {
     setSelectedGroupIds((prev) =>
@@ -58,21 +40,19 @@ export default function FieldModal({ field, onClose, onSave, getToken }: Props) 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
+    const url = (form.elements.namedItem('url') as HTMLInputElement).value
+    const label = (form.elements.namedItem('label') as HTMLInputElement).value
     const body = {
-      label: (form.elements.namedItem('label') as HTMLInputElement).value,
-      body: (form.elements.namedItem('body') as HTMLTextAreaElement).value,
+      type: 'link',
+      label: label || url,
+      body: url,
       groupIds: selectedGroupIds,
     }
     const token = await getToken()
     const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
-    const url = isEdit ? `/api/profile-fields/${field.id}` : '/api/profile-fields'
+    const apiUrl = isEdit ? `/api/profile-fields/${field.id}` : '/api/profile-fields'
     const method = isEdit ? 'PUT' : 'POST'
-    const res = await fetch(url, { method, headers, body: JSON.stringify(body) })
-    const data = await res.json()
-    if (!res.ok) {
-      alert(data.error?.message ?? t('modal.saveError'))
-      return
-    }
+    await fetch(apiUrl, { method, headers, body: JSON.stringify(body) })
     onSave()
     onClose()
   }
@@ -86,7 +66,7 @@ export default function FieldModal({ field, onClose, onSave, getToken }: Props) 
       <div className="glass w-full max-w-md rounded-xl shadow-2xl" style={{ background: 'var(--bg-subtle)', backdropFilter: 'none', WebkitBackdropFilter: 'none' }}>
         <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: 'var(--glass-border)' }}>
           <h2 className="font-semibold" style={{ color: 'var(--text)' }}>
-            {isEdit ? '項目を編集' : '項目を追加'}
+            {isEdit ? 'リンクを編集' : 'リンクを追加'}
           </h2>
           <button onClick={onClose} className="rounded p-1 transition-colors hover:opacity-70">
             <X className="h-4 w-4" style={{ color: 'var(--text-muted)' }} />
@@ -96,24 +76,16 @@ export default function FieldModal({ field, onClose, onSave, getToken }: Props) 
           <div className="space-y-4 px-5 py-5">
             <div>
               <label className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                ラベル <span style={{ color: 'var(--danger)' }}>*</span>
+                URL <span style={{ color: 'var(--danger)' }}>*</span>
               </label>
-              <Input name="label" defaultValue={field?.label ?? ''} placeholder="例：学歴、職歴" required />
+              <Input name="url" type="url" defaultValue={field?.body ?? ''} placeholder="https://..." required />
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                内容 <span style={{ color: 'var(--danger)' }}>*</span>
+                表示名 <span className="text-xs font-normal">（省略するとURLを使用）</span>
               </label>
-              <textarea
-                name="body"
-                defaultValue={field?.body ?? ''}
-                rows={4}
-                required
-                className="w-full rounded-md border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
-                style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
-              />
+              <Input name="label" defaultValue={field?.label !== field?.body ? (field?.label ?? '') : ''} placeholder="例：GitHub、個人ブログ" />
             </div>
-
             {groups.length > 0 && (
               <div>
                 <label className="mb-2 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
@@ -143,8 +115,8 @@ export default function FieldModal({ field, onClose, onSave, getToken }: Props) 
             )}
           </div>
           <div className="flex justify-end gap-2 border-t px-5 py-4" style={{ borderColor: 'var(--glass-border)' }}>
-            <Button type="button" variant="ghost" onClick={onClose}>{t('modal.cancel')}</Button>
-            <Button type="submit">{isEdit ? t('modal.save') : t('modal.create')}</Button>
+            <Button type="button" variant="ghost" onClick={onClose}>キャンセル</Button>
+            <Button type="submit">{isEdit ? '保存' : '追加'}</Button>
           </div>
         </form>
       </div>
