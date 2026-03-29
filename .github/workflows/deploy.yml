@@ -45,6 +45,8 @@ jobs:
 
       - run: pnpm install
 
+      - run: echo "ignore-workspace-root-check=true" >> .npmrc
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
@@ -78,6 +80,8 @@ jobs:
           cache: pnpm
 
       - run: pnpm install
+
+      - run: echo "ignore-workspace-root-check=true" >> .npmrc
 
       - name: Create _redirects for API proxy
         run: |
