@@ -2,18 +2,13 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import type { Group } from '@/types/Group'
 
 type LinkField = {
   id: string
   label: string
   body: string
   groupIds: string[]
-}
-
-type Group = {
-  id: string
-  name: string
-  isDefault: boolean
 }
 
 type Props = {

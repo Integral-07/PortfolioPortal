@@ -2,11 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { Plus, Copy, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-
-type Group = {
-  id: string
-  name: string
-}
+import type { Group } from '@/types/Group'
 
 export default function GroupsSection() {
   const { getToken } = useAuth()

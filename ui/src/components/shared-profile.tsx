@@ -4,20 +4,8 @@ import { Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth, useClerk } from '@clerk/clerk-react'
 import OgpCard from './ogp-card'
-
-type Profile = {
-  id: string
-  name: string
-  bio?: string | null
-}
-
-type Field = {
-  id: string
-  type: string
-  label: string
-  body: string
-  order: number
-}
+import type { Profile } from '@/types/Profile'
+import type { Field } from '@/types/Field'
 
 type Props = {
   token: string

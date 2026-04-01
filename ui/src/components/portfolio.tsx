@@ -21,23 +21,18 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import ProfileModal from './profile-modal'
 import FieldModal from './field-modal'
+import PictureModal from './picture-modal'
 import HeadingModal from './heading-modal'
 import LinkModal from './link-modal'
+import type { Profile } from '@/types/Profile'
+import type { Field } from '@/types/Field'
+import type { Group } from '@/types/Group'
 
-type Profile = {
+type PictureField = {
   id: string
-  name: string
-  bio?: string | null
-  shareSlug: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-type Field = {
-  id: string
-  type: string
+  type: 'picture'
   label: string
-  body: string
+  body: string // URL of the picture
   order: number
   groupIds: string[]
 }
@@ -45,9 +40,8 @@ type Field = {
 type ProfileModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit'; profile: Profile }
 type FieldModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit'; field: Field }
 type HeadingModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit'; field: Field }
+type PictureModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit'; field: PictureField }
 type LinkModalState = { type: 'closed' } | { type: 'create' } | { type: 'edit'; field: Field }
-
-type Group = { id: string; name: string; isDefault: boolean }
 
 function SortableFieldItem({
   field,
@@ -145,6 +139,7 @@ export default function Portfolio() {
   const [profileModal, setProfileModal] = useState<ProfileModalState>({ type: 'closed' })
   const [fieldModal, setFieldModal] = useState<FieldModalState>({ type: 'closed' })
   const [headingModal, setHeadingModal] = useState<HeadingModalState>({ type: 'closed' })
+  const [pictureModal, setPictureModal] = useState<PictureModalState>({ type: 'closed' })
   const [linkModal, setLinkModal] = useState<LinkModalState>({ type: 'closed' })
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -298,6 +293,10 @@ export default function Portfolio() {
                 <Button size="sm" variant="outline" onClick={() => setFieldModal({ type: 'create' })}>
                   <Plus className="h-3.5 w-3.5" />
                   項目を追加
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setPictureModal({ type: 'create' })}>
+                  <Plus className="h-3.5 w-3.5" />
+                  画像を挿入
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setLinkModal({ type: 'create' })}>
                   <Plus className="h-3.5 w-3.5" />

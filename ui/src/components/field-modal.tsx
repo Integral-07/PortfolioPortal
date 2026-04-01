@@ -3,19 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
-type Field = {
-  id: string
-  label: string
-  body: string
-  groupIds: string[]
-}
-
-type Group = {
-  id: string
-  name: string
-  isDefault: boolean
-}
+import type { Field } from '@/types/Field'
+import type { Group } from '@/types/Group'
 
 type Props = {
   field?: Field

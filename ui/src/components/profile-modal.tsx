@@ -2,12 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
-type Profile = {
-  id: string
-  name: string
-  bio?: string | null
-}
+import type { Profile } from '@/types/Profile'
 
 type Props = {
   profile?: Profile
